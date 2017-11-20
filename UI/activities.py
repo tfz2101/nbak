@@ -1,19 +1,23 @@
-"""
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-Created on Mar 11, 2012
-
-@author: Erik Bjareholt
-"""
 
 import random
 
 import pygame
 from pygame.locals import *
 from settings import Settings
+import os
 
 from . import widgets
+
+_image_library = {}
+
+def get_image(path):
+    global _image_library
+    image = _image_library.get(path)
+    if image == None:
+            canonicalized_path = path.replace('/', os.sep).replace('\\', os.sep)
+            image = pygame.image.load(canonicalized_path).convert()
+            _image_library[path] = image
+    return image
 
 
 class Activity:
@@ -55,15 +59,17 @@ class Menu(Activity):
 
         return self.surface
 
-
+#Sets the Game Grid and what it looks like
 class Game(Activity):
     corner_radius = 10
 
-    board_surface_size = (300+corner_radius*2, 300+corner_radius*2)
+    #Dictates the size of the game board
+    board_surface_size = (800, 800)
     board_surface_color = (200, 200, 200)
     cell_surface_size = (100, 100)
     cell_surface_color = (50, 50, 50)
     background_color = (255, 255, 255)
+
 
     def __init__(self):
         Activity.__init__(self)
@@ -73,16 +79,49 @@ class Game(Activity):
         self.history = []
         self.reset()
 
-        self.positions = {i+1: (self.corner_radius + 100*(i % 3),
-                                self.corner_radius + 100*(int(i/3)))
-                          for i in range(9)}
+        #Defines the positions that the box can appear in each slide
+        #self.positions = {i+1: (self.corner_radius + 100*(i % 3), self.corner_radius + 100*(int(i/3)))
+        #                  for i in range(9)}
+
+        self.positions = {1: (100,100),
+                          2: (300,100),
+                          3: (500,100),
+                          4: (100,300),
+                          5: (300,300),
+                          6: (500,300),
+                          7: (100,500),
+                          8: (300,500),
+                          9: (500,500),
+                         }
+
 
         self.normalFont = pygame.font.Font("fonts/freesansbold.ttf", 20)
         self.smallFont = pygame.font.Font("fonts/freesansbold.ttf", 15)
         self.cellFont = pygame.font.Font("fonts/freesansbold.ttf", 70)
 
         self.show_answer = False
-        self.triggered = False
+        self.triggered_loc = False
+        self.triggered_sound = False
+
+
+    #Draw function to draw Grid1
+    def draw_grid1(self):
+        self.surface.fill(self.background_color)
+        self.surface = pygame.Surface(self.board_surface_size).convert_alpha()
+        board_surface = pygame.Surface.copy(self.surface)
+        grid_img = get_image('Grid1.png')
+        board_surface.blit(grid_img, (0,0))
+
+
+        if not self.show_answer or not self.early_slide():
+            box_img = get_image('grid1_box.png')
+            board_surface.blit(box_img, (self.positionX, self.positionY, 100, 100))
+
+        self.surface.blit(board_surface, ((self.windowSize[0]-board_surface.get_width())/2,
+                                          (self.windowSize[1]-board_surface.get_height())/2,
+                                           700,700))
+
+        return self.surface
 
     def draw(self):
         self.surface.fill(self.background_color)
@@ -94,6 +133,7 @@ class Game(Activity):
             cell_surface_base = widgets.Box(self.cell_surface_size, self.cell_surface_color, self.corner_radius).draw()
             cell_surface = pygame.Surface.copy(cell_surface_base)
 
+            #drawNumber is a setting to determin if a number goes along with the block
             if self.settings.drawNumber:
                 cell_number = self.cellFont.render(str(self.history[-1]), True, (255, 255, 255))
                 cell_surface.blit(cell_number, (50-cell_number.get_width()/2, 50-cell_number.get_height()/2))
@@ -108,11 +148,20 @@ class Game(Activity):
         self.results = {"correct": 0, "avoid": 0, "miss": 0, "wrong": 0}
         self.history = []
 
+    #Called first in the Main Code
     def start(self):
         self.reset()
         self.nextSlide()
 
+        #This sets the time between each slide
         pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime))
+
+
+    def start_grid(self):
+        self.reset()
+        self.nextSlide()
+
+
 
     def pause(self):
         if self.activeGame:
@@ -127,6 +176,7 @@ class Game(Activity):
         print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.results))
         pygame.time.set_timer(USEREVENT+1, 0)
         pygame.time.set_timer(QUIT, self.settings.slideTime)
+
 
     def save(self):
         """Saves result to CSV"""
@@ -148,13 +198,24 @@ class Game(Activity):
     def early_slide(self):
         return len(self.history) < 1+self.settings.nBack
 
-    def trigger(self):
+    def trigger_loc(self):
         if self.early_slide():
             print("Too early!")
             return
 
-        if not self.triggered:
-            self.triggered = True
+        if not self.triggered_loc:
+            self.triggered_loc = True
+            self.checkAnswer()
+        else:
+            print("Already triggered")
+
+    def trigger_sound(self):
+        if self.early_slide():
+            print("Too early!")
+            return
+
+        if not self.triggered_sound:
+            self.triggered_sound = True
             self.checkAnswer()
         else:
             print("Already triggered")
@@ -166,37 +227,41 @@ class Game(Activity):
         nBackPos = self.history[-(1+self.settings.nBack)]
         pos = self.currentPosition()
 
-        if self.triggered:
+        if self.triggered_loc:
             if nBackPos == pos:
                 self.results["correct"] += 1
                 self.setCorrectAnswer()
-                print("Correct, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                #print("Correct, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
             elif nBackPos != pos:
                 self.results["wrong"] += 1
                 self.setWrongAnswer()
-                print("Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                #print("Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
         else:
             if nBackPos != pos:
                 self.results["avoid"] += 1
                 self.setCorrectAnswer()
-                print("Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                #print("Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
             elif nBackPos == pos:
                 self.results["miss"] += 1
                 self.setWrongAnswer()
-                print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                #print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
 
+    #Picks the next square that will pop up
     def nextSlide(self):
         if random.random() < self.settings.repeatProbability and not self.early_slide():
             '''This needs to be remade so that any of the last (self.nBack) numbers could be the next one.'''
             position = self.history[random.randint(-(1+self.settings.nBack), -1)]
         else:
             position = random.randint(1, 9)
+        #Records the position of the next square
         self.history.append(position)
 
         if self.settings.debug:
             print("Slide number {0} generated with value: {1}".format(len(self.history), self.history[-1]))
 
-        self.triggered = False
+        self.triggered_loc = False
+
+        #First time positionX and positonY are initialized since nextSlide is run in the start() fcn
         self.positionX = self.positions[self.currentPosition()][0]
         self.positionY = self.positions[self.currentPosition()][1]
 
@@ -216,6 +281,112 @@ class Game(Activity):
             if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
                 self.stop()
+
+
+class Game1(Game):
+    def __init__(self):
+        Game.__init__(self)
+        self.history_sound = []
+
+    def draw_grid1(self):
+        self.surface.fill(self.background_color)
+        self.surface = pygame.Surface(self.board_surface_size).convert_alpha()
+        board_surface = pygame.Surface.copy(self.surface)
+        grid_img = get_image('Grid1.png')
+        board_surface.blit(grid_img, (0,0))
+
+
+        if not self.show_answer or not self.early_slide():
+            box_img = get_image('grid1_box.png')
+            board_surface.blit(box_img, (self.positionX, self.positionY, 100, 100))
+
+        self.surface.blit(board_surface, ((self.windowSize[0]-board_surface.get_width())/2,
+                                          (self.windowSize[1]-board_surface.get_height())/2,
+                                           700,700))
+
+        pygame.mixer.music.load('Grid1.mp3')
+        pygame.mixer.music.play(0)
+        return self.surface
+
+
+class Game2(Game):
+    board_surface_size = (1000, 1000)
+    board_surface_color = (200, 200, 200)
+    cell_surface_size = (100, 100)
+    cell_surface_color = (50, 50, 50)
+    background_color = (255, 255, 255)
+
+    def __init__(self):
+        Game.__init__(self)
+        self.positions = {1: (400,115),
+                          2: (248,222),
+                          3: (165,350),
+                          4: (250,480),
+                          5: (402,542),
+                          6: (553,480),
+                          7: (640,350),
+                          8: (550,225),
+                          9: (400,340),
+                         }
+
+    def draw_grid1(self):
+        self.surface.fill(self.background_color)
+        self.surface = pygame.Surface(self.board_surface_size).convert_alpha()
+        board_surface = pygame.Surface.copy(self.surface)
+        grid_img = get_image('Grid2.png')
+        board_surface.blit(grid_img, (-50,100))
+
+
+        if not self.show_answer or not self.early_slide():
+            box_img = get_image('grid1_box.png')
+            board_surface.blit(box_img, (self.positionX, self.positionY, 100, 100))
+
+        self.surface.blit(board_surface, ((self.windowSize[0]-board_surface.get_width())/2,
+                                          (self.windowSize[1]-board_surface.get_height())/2))
+
+        return self.surface
+
+
+class Game3(Game):
+    board_surface_size = (1000, 1000)
+    board_surface_color = (200, 200, 200)
+    cell_surface_size = (100, 100)
+    cell_surface_color = (50, 50, 50)
+    background_color = (255, 255, 255)
+
+    def __init__(self):
+        Game.__init__(self)
+        self.positions = {1: (80,155),
+                          2: (245,255),
+                          3: (430,340),
+                          4: (258,430),
+                          5: (80,510),
+                          6: (615,240),
+                          7: (762,150),
+                          8: (613,430),
+                          9: (775,508),
+                         }
+
+    def draw_grid1(self):
+        self.surface.fill(self.background_color)
+        self.surface = pygame.Surface(self.board_surface_size).convert_alpha()
+        board_surface = pygame.Surface.copy(self.surface)
+        grid_img = get_image('Grid3.png')
+
+        board_surface.blit(grid_img, (-50,100))
+
+
+        if not self.show_answer or not self.early_slide():
+            box_img = get_image('grid1_box.png')
+            box_img = pygame.transform.scale(box_img,(60,60))
+            board_surface.blit(box_img, (self.positionX, self.positionY, 30, 30))
+
+        self.surface.blit(board_surface, ((self.windowSize[0]-board_surface.get_width())/2,
+                                          (self.windowSize[1]-board_surface.get_height())/2))
+
+        return self.surface
+
+
 
 class Results(Activity):
     def __init__(self, results):

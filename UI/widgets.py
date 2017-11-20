@@ -1,22 +1,17 @@
-"""
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Created on Mar 11, 2012
-
-@author: Erik Bjareholt
-"""
 
 import pygame.surface
 import pygame.draw
+
+
 
 class Widget:
     def __init__(self, size):
         self.size = size
         self.surface = pygame.Surface(self.size).convert_alpha()
         self.surface.fill((0,0,0,0))
-    
-    
+
+
 class Box(Widget):
     def __init__(self, size, color, radius=0):
         Widget.__init__(self, size)

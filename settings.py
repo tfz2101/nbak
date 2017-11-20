@@ -1,25 +1,24 @@
 from singleton import Singleton
 
-__author__ = 'erb'
-
 @Singleton
 class Settings():
     version = "0.3.1"
 
     # The N in N-Back
-    nBack = 2
+    nBack = 1
 
     # Probability that one of the last N slides will be next
-    repeatProbability = 0.75
+    repeatProbability = nBack/9.0
 
     # Time given to answer each slide, the correct answer is shown afterwards at a fraction of the time
-    slideTime = 1000
+    slideTime = 900
 
     # How many slides to show during one game
-    numOfSlides = 20
+    numOfSlides = 10
 
     # Window settings
-    windowSize = (1000, 1000)
+    windowSize = (950, 950)
+
     # Kind of quirky, messes up resolution settings in my dev env.
     fullscreen = False
 
