@@ -11,10 +11,10 @@ class Settings():
     repeatProbability = nBack/9.0
 
     # Time given to answer each slide, the correct answer is shown afterwards at a fraction of the time
-    slideTime = 1000
+    slideTime = 2000
 
     # How many slides to show during one game
-    numOfSlides = 10
+    numOfSlides = 15
 
     # Window settings
     windowSize = (920, 820)

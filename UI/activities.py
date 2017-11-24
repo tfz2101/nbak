@@ -25,7 +25,6 @@ class Activity:
         settings = Settings.Instance()
         self.surface = pygame.Surface(settings.windowSize).convert()
         self.windowSize = settings.windowSize
-        self.android = settings.android
 
 
 class Menu(Activity):
@@ -37,12 +36,8 @@ class Menu(Activity):
         self.menuFont = pygame.font.Font("fonts/freesansbold.ttf", 20)
         self.smallFont = pygame.font.Font("fonts/freesansbold.ttf", 15)
 
-        if self.android:
-            newgameKey = "Search"
-            triggerKey = "Touch"
-        else:
-            newgameKey = "Escape"
-            triggerKey = "Space"
+        newgameKey = "Escape"
+        triggerKey = "Space"
 
         titleText = self.titleFont.render("Welcome to N-Back!", True, (255,255,0))
         titleVersion = self.smallFont.render("Version " + self.version, True, (255,255,0))
@@ -264,7 +259,7 @@ class Game(Activity):
             self.nextSlide()
         else:
             self.checkAnswer()
-            pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/3))
+            pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/4))
             if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
                 self.stop()
@@ -302,7 +297,7 @@ class Game1(Game):
 
         if not self.triggered_sound:
             self.triggered_sound = True
-            self.checkAnswer()
+            #self.checkAnswer()
         else:
             print("Already triggered")
 
@@ -333,6 +328,7 @@ class Game1(Game):
             pos = self.currentPosition()
             cur_sound = self.currentSound()
 
+            '''
             if self.triggered_loc:
                 if nBackPos == pos:
                     self.results["correct"] += 1
@@ -351,6 +347,8 @@ class Game1(Game):
                     self.results["miss"] += 1
                     self.setWrongAnswer()
                     print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+        '''
+
         if self.early_slide_sound():
             return
 
@@ -358,20 +356,20 @@ class Game1(Game):
             if nBackSound == cur_sound:
                 self.results["correct"] += 1
                 self.setCorrectAnswer()
-                print("(Sound) Correct, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                print("(Sound) Correct, {0} is equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
             elif nBackSound != cur_sound:
                 self.results["wrong"] += 1
                 self.setWrongAnswer()
-                print("(Sound) Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                print("(Sound) Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
         else:
             if nBackSound != cur_sound:
                 self.results["avoid"] += 1
                 self.setCorrectAnswer()
-                print("(Sound) Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                print("(Sound) Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
             elif nBackSound == cur_sound:
                 self.results["miss"] += 1
                 self.setWrongAnswer()
-                print("(Sound) Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                print("(Sound) Missed it, {0} is equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
 
 
     def nextSlide(self):
@@ -381,8 +379,8 @@ class Game1(Game):
         self.history.append(position)
 
         if self.settings.debug:
-
-            print("Slide number {0} generated with sound: {1}".format(len(self.history), self.history[-1]))
+            pass
+            #print("Slide number {0} generated with value: {1}".format(len(self.history), self.history[-1]))
 
         self.triggered_loc = False
 
@@ -391,18 +389,17 @@ class Game1(Game):
         self.positionY = self.positions[self.currentPosition()][1]
 
         #SOUNDDDDDD
-        sound = random.randint(1, 9)
+        sound = random.randint(1, 2)
 
         #Records the position of the next square
         self.history_sound.append(sound)
 
         if self.settings.debug:
-            print("Slide number {0} generated with value: {1}".format(len(self.history_sound), self.history_sound[-1]))
+            print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
 
-        sound = pygame.mixer.Sound(self.sound_bank[sound-1])
-        sound.play()
-        #print('played again!')
-        time.sleep(2.4)
+        #sound = pygame.mixer.Sound(self.sound_bank[sound-1])
+        #sound.play()
+        time.sleep(0.5)
 
         self.triggered_sound = False
 
@@ -417,12 +414,25 @@ class Game1(Game):
             self.nextSlide()
         else:
             self.checkAnswer()
-            #pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/3))
+            pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/5))
             if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
                 self.stop()
 
 
+        '''
+        if not self.show_answer:
+            self.setNoAnswer()
+            pygame.time.set_timer(USEREVENT+1, self.settings.slideTime)
+            self.nextSlide()
+        else:
+            self.checkAnswer()
+            #pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/4))
+            time.sleep(0.2)
+            if len(self.history) >= self.settings.numOfSlides:
+                # If enough slides have passed
+                self.stop()
+        '''
 
 
 class Game2(Game):

@@ -1,6 +1,6 @@
 '''
 '''
-import sys
+import sys,time
 
 import pygame
 from pygame.locals import *
@@ -31,7 +31,7 @@ class NBack:
         self.grid2 = UI.activities.Game2()
         self.grid3 = UI.activities.Game3()
 
-        self.game = self.grid3
+        self.game = self.grid1
 
         self.board_position = {1:[80,80],2:[40,30],3:[120,120]}
 
@@ -45,7 +45,7 @@ class NBack:
         if self.drawMenu:
             self.screen.blit(self.menu.draw(), (0, 0))
 
-
+        time.sleep(2)
         while True:
             #Streams in user actions
             self.handler()
@@ -59,7 +59,7 @@ class NBack:
     def draw(self):
         #Mechanism to change grids - should be based on the score on the current grid - CHANGE!!!!!!!!
         self.counter = self.counter + 1
-        if self.counter >= 400:
+        if self.counter >= 100000000:
             self.currentGridScore = -1
             self.counter = 0
 
@@ -79,7 +79,6 @@ class NBack:
     
     def handler(self):
         pygame.event.pump()
-
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -123,7 +122,6 @@ class NBack:
 
 settings = Settings.Instance()
 pygame.init()
-pygame.mixer.init()
 nback = NBack()
-pygame.display.set_caption('N-Back v' + settings.version)
+pygame.display.set_caption('N-Back')
 nback.run()
