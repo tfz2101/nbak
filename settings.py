@@ -11,13 +11,13 @@ class Settings():
     repeatProbability = nBack/9.0
 
     # Time given to answer each slide, the correct answer is shown afterwards at a fraction of the time
-    slideTime = 900
+    slideTime = 1000
 
     # How many slides to show during one game
     numOfSlides = 10
 
     # Window settings
-    windowSize = (950, 950)
+    windowSize = (920, 820)
 
     # Kind of quirky, messes up resolution settings in my dev env.
     fullscreen = False
@@ -25,7 +25,7 @@ class Settings():
     drawNumber = True
 
     # Set to true to skip menu
-    standalone = True
+    standalone = False
 
     # Unsupported
     android = False

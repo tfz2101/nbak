@@ -8,12 +8,6 @@ from pygame.locals import *
 import UI
 from settings import Settings
 
-'''
-try:
-    import android
-except ImportError:
-    android = None
-'''
 class NBack:
     #Constructor
     def __init__(self):
@@ -37,9 +31,9 @@ class NBack:
         self.grid2 = UI.activities.Game2()
         self.grid3 = UI.activities.Game3()
 
-        self.game = self.grid1
+        self.game = self.grid3
 
-        self.board_position = {1:[80,80],2:[40,120],3:[120,120]}
+        self.board_position = {1:[80,80],2:[40,30],3:[120,120]}
 
         self.currentGridScore = 1
         self.counter = 0
@@ -50,6 +44,7 @@ class NBack:
 
         if self.drawMenu:
             self.screen.blit(self.menu.draw(), (0, 0))
+
 
         while True:
             #Streams in user actions
@@ -64,7 +59,7 @@ class NBack:
     def draw(self):
         #Mechanism to change grids - should be based on the score on the current grid - CHANGE!!!!!!!!
         self.counter = self.counter + 1
-        if self.counter >= 1000:
+        if self.counter >= 400:
             self.currentGridScore = -1
             self.counter = 0
 
@@ -84,6 +79,7 @@ class NBack:
     
     def handler(self):
         pygame.event.pump()
+
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -124,8 +120,10 @@ class NBack:
 
 
 
+
 settings = Settings.Instance()
 pygame.init()
+pygame.mixer.init()
 nback = NBack()
 pygame.display.set_caption('N-Back v' + settings.version)
 nback.run()
