@@ -30,27 +30,15 @@ class Activity:
 class Menu(Activity):
     def __init__(self):
         Activity.__init__(self)
-        self.version = Settings.Instance().version
-
-        self.titleFont = pygame.font.Font("fonts/freesansbold.ttf", 50)
-        self.menuFont = pygame.font.Font("fonts/freesansbold.ttf", 20)
-        self.smallFont = pygame.font.Font("fonts/freesansbold.ttf", 15)
-
-        newgameKey = "Escape"
-        triggerKey = "Space"
-
-        titleText = self.titleFont.render("Welcome to N-Back!", True, (255,255,0))
-        titleVersion = self.smallFont.render("Version " + self.version, True, (255,255,0))
-        self.title = pygame.Surface((650,200)).convert()
-        self.title.blit(titleText, (self.title.get_width()/2-titleText.get_width()/2, self.title.get_height()/2-titleText.get_height()/2))
-        self.title.blit(titleVersion, (self.title.get_width()/2-titleVersion.get_width()/2, (self.title.get_height()/2-titleVersion.get_height()/2)+40))
-
-        self.controlsBox = widgets.TextBox("Controls\n  New Game - {0}\n  Trigger N-Back - {1}".format(newgameKey, triggerKey), self.menuFont, (270,100), color=(0,0,50), textColor=(255,255,0), radius=10)
 
     def draw(self):
-        self.surface.blit(self.title, ( (self.surface.get_width()/2-self.title.get_width()/2), (self.surface.get_height()/2-self.title.get_height()/2)-100 ))
-        #self.surface.blit(self.controls, ( 25, (self.windowSize[1]-self.controls.get_height())-25 ))
-        self.surface.blit(self.controlsBox.draw(), ( 25, (self.windowSize[1]-self.controlsBox.draw().get_height())-25 ))
+        surface = pygame.Surface((800, 600), pygame.SRCALPHA)
+        surface.fill((255, 255, 255))
+        image = pygame.image.load('menu_design.png')
+        image = pygame.transform.scale(image, (920, 820))
+
+        surface.blit(image, (0, 0))
+        self.surface = surface
 
         return self.surface
 
@@ -98,6 +86,16 @@ class Game(Activity):
         self.triggered_loc = False
         self.triggered_sound = False
 
+    def getSlidesElapsed(self):
+        return len(self.history)
+
+    def getCurrentGamePercentage(self):
+        if self.getSlidesElapsed()<1:
+            return 1
+        else:
+            correct = self.results['correct']+self.results['avoid']
+            print('correct',correct)
+            return correct/1.0/self.getSlidesElapsed()
 
     #Draw function to draw Grid1
     def draw_grid1(self):
@@ -247,6 +245,7 @@ class Game(Activity):
         self.positionX = self.positions[self.currentPosition()][0]
         self.positionY = self.positions[self.currentPosition()][1]
 
+
     def currentPosition(self):
         return self.history[-1]
 
@@ -260,15 +259,16 @@ class Game(Activity):
         else:
             self.checkAnswer()
             pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/4))
-            if len(self.history) >= self.settings.numOfSlides:
+            #if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
-                self.stop()
+                #self.stop()
 
 
 class Game1(Game):
     def __init__(self):
         Game.__init__(self)
         self.history_sound = []
+        self.results_sound = {}
         self.sound_bank = [ "Audio/1.wav",
                             "Audio/2.wav",
                             "Audio/3.wav",
@@ -284,8 +284,26 @@ class Game1(Game):
 
     def reset(self):
         self.results = {"correct": 0, "avoid": 0, "miss": 0, "wrong": 0}
+        self.results_sound = {"correct": 0, "avoid": 0, "miss": 0, "wrong": 0}
         self.history = []
         self.history_sound = []
+
+    def stop(self):
+        self.save()
+        print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.results))
+        print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.results_sound))
+        pygame.time.set_timer(USEREVENT+1, 0)
+        pygame.time.set_timer(QUIT, self.settings.slideTime)
+
+    def save(self):
+        """Saves result to CSV"""
+        print("Saving results to CSV...")
+        with open("./output.csv", "w+") as f:
+            f.read()
+            position_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.results)
+            sound_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.results_sound)
+            f.writelines([position_results,sound_results])
+
 
     def early_slide_sound(self):
         return len(self.history_sound) < 1+self.settings.nBack
@@ -328,7 +346,7 @@ class Game1(Game):
             pos = self.currentPosition()
             cur_sound = self.currentSound()
 
-            '''
+
             if self.triggered_loc:
                 if nBackPos == pos:
                     self.results["correct"] += 1
@@ -347,27 +365,27 @@ class Game1(Game):
                     self.results["miss"] += 1
                     self.setWrongAnswer()
                     print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
-        '''
+
 
         if self.early_slide_sound():
             return
 
         if self.triggered_sound:
             if nBackSound == cur_sound:
-                self.results["correct"] += 1
+                self.results_sound["correct"] += 1
                 self.setCorrectAnswer()
                 print("(Sound) Correct, {0} is equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
             elif nBackSound != cur_sound:
-                self.results["wrong"] += 1
+                self.results_sound["wrong"] += 1
                 self.setWrongAnswer()
                 print("(Sound) Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
         else:
             if nBackSound != cur_sound:
-                self.results["avoid"] += 1
+                self.results_sound["avoid"] += 1
                 self.setCorrectAnswer()
                 print("(Sound) Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
             elif nBackSound == cur_sound:
-                self.results["miss"] += 1
+                self.results_sound["miss"] += 1
                 self.setWrongAnswer()
                 print("(Sound) Missed it, {0} is equal to {1} with nBack={2}.".format(nBackSound, cur_sound, self.settings.nBack))
 
@@ -379,8 +397,7 @@ class Game1(Game):
         self.history.append(position)
 
         if self.settings.debug:
-            pass
-            #print("Slide number {0} generated with value: {1}".format(len(self.history), self.history[-1]))
+            print("Slide number {0} generated with value: {1}".format(len(self.history), self.history[-1]))
 
         self.triggered_loc = False
 
@@ -397,8 +414,8 @@ class Game1(Game):
         if self.settings.debug:
             print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
 
-        #sound = pygame.mixer.Sound(self.sound_bank[sound-1])
-        #sound.play()
+        sound = pygame.mixer.Sound(self.sound_bank[sound-1])
+        sound.play()
         time.sleep(0.5)
 
         self.triggered_sound = False
@@ -415,24 +432,10 @@ class Game1(Game):
         else:
             self.checkAnswer()
             pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/5))
-            if len(self.history) >= self.settings.numOfSlides:
+            #if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
-                self.stop()
+            #    self.stop()
 
-
-        '''
-        if not self.show_answer:
-            self.setNoAnswer()
-            pygame.time.set_timer(USEREVENT+1, self.settings.slideTime)
-            self.nextSlide()
-        else:
-            self.checkAnswer()
-            #pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/4))
-            time.sleep(0.2)
-            if len(self.history) >= self.settings.numOfSlides:
-                # If enough slides have passed
-                self.stop()
-        '''
 
 
 class Game2(Game):

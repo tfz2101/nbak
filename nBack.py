@@ -1,6 +1,6 @@
 '''
 '''
-import sys,time
+import sys,time,random
 
 import pygame
 from pygame.locals import *
@@ -26,17 +26,41 @@ class NBack:
         self.drawGame = False if not self.settings.standalone else True
         self.drawResults = False
 
+        self.compiledPosResults = {"correct": 0, "avoid": 0, "miss": 0, "wrong": 0}
+        self.compiledSoundResults = {"correct": 0, "avoid": 0, "miss": 0, "wrong": 0}
+
         self.menu = UI.activities.Menu()
         self.grid1 = UI.activities.Game1()
         self.grid2 = UI.activities.Game2()
         self.grid3 = UI.activities.Game3()
 
+        self.gridArray = [self.grid1,self.grid2,self.grid3]
+
+        self.curGridIndex = 0
         self.game = self.grid1
 
         self.board_position = {1:[80,80],2:[40,30],3:[120,120]}
 
-        self.currentGridScore = 1
-        self.counter = 0
+        self.currentTotalSlidesElapsed = 0
+
+        self.warmup_slides = 3
+
+    def stop(self):
+        self.save()
+        print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.compiledPosResults))
+        print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.compiledSoundResults))
+        pygame.time.set_timer(USEREVENT+1, 0)
+        pygame.time.set_timer(QUIT, self.settings.slideTime)
+
+
+
+    def save(self):
+        print("Saving results to CSV...")
+        with open("./output.csv", "w+") as f:
+            f.read()
+            position_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.compiledPosResults)
+            sound_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.compiledSoundResults)
+            f.writelines([position_results, sound_results])
 
     def run(self):
         if self.settings.standalone:
@@ -47,6 +71,9 @@ class NBack:
 
         time.sleep(2)
         while True:
+            if (self.currentTotalSlidesElapsed + self.game.getSlidesElapsed()) >= self.settings.numOfSlides:
+                self.stop()
+
             #Streams in user actions
             self.handler()
 
@@ -57,25 +84,36 @@ class NBack:
 
 
     def draw(self):
-        #Mechanism to change grids - should be based on the score on the current grid - CHANGE!!!!!!!!
-        self.counter = self.counter + 1
-        if self.counter >= 100000000:
-            self.currentGridScore = -1
-            self.counter = 0
 
         #Change this code to change the Grid!!
         if self.drawGame:
-           if self.currentGridScore < 0:
-                self.game = self.grid2
+
+           if self.game.getCurrentGamePercentage() < 0.5 and self.game.getSlidesElapsed() > self.warmup_slides:
+                self.currentTotalSlidesElapsed += self.game.getSlidesElapsed()
+                for key in self.game.results:
+                    self.compiledPosResults[key]+=self.game.results[key]
+                    try:
+                        self.compiledSoundResults[key] += self.game.results_sound[key]
+                    except AttributeError:
+                        pass
+
+                nextGrid = random.randint(0,2)
+                if nextGrid == self.curGridIndex:
+                    self.curGridIndex = self.curGridIndex - 1
+                else:
+                    self.curGridIndex = nextGrid
+
+
+                self.game = self.gridArray[self.curGridIndex]
                 self.game.start_grid()
            self.screen.blit(self.game.draw_grid1(), (self.board_position[2][0], self.board_position[2][1]))
+        print('current game slides elapsed',self.game.getSlidesElapsed())
+        print('game %',self.game.getCurrentGamePercentage())
+        print('total slides passed',self.currentTotalSlidesElapsed)
 
 
-
-        self.currentGridScore = 1
-
-        #if self.drawResults:
-        #    self.screen.blit(self.results.draw(), (0, 0))
+        if self.drawResults:
+            self.screen.blit(self.results.draw(), (0, 0))
     
     def handler(self):
         pygame.event.pump()
@@ -114,9 +152,6 @@ class NBack:
 
             elif event.type == USEREVENT+1:
                 self.game.showSlideSwitch()
-
-
-
 
 
 
