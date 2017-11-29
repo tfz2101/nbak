@@ -14,10 +14,10 @@ class Settings():
     slideTime = 2000
 
     # How many slides to show during one game
-    numOfSlides = 15
+    numOfSlides = 8
 
     # Window settings
-    windowSize = (920, 820)
+    windowSize = (910, 800)
 
     # Kind of quirky, messes up resolution settings in my dev env.
     fullscreen = False

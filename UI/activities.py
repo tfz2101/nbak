@@ -35,9 +35,9 @@ class Menu(Activity):
         surface = pygame.Surface((800, 600), pygame.SRCALPHA)
         surface.fill((255, 255, 255))
         image = pygame.image.load('menu_design.png')
-        image = pygame.transform.scale(image, (920, 820))
+        image = pygame.transform.scale(image, (910, 800))
 
-        surface.blit(image, (0, 0))
+        surface.blit(image, (50, 50))
         self.surface = surface
 
         return self.surface
@@ -86,6 +86,7 @@ class Game(Activity):
         self.triggered_loc = False
         self.triggered_sound = False
 
+
     def getSlidesElapsed(self):
         return len(self.history)
 
@@ -94,7 +95,6 @@ class Game(Activity):
             return 1
         else:
             correct = self.results['correct']+self.results['avoid']
-            print('correct',correct)
             return correct/1.0/self.getSlidesElapsed()
 
     #Draw function to draw Grid1
@@ -199,7 +199,7 @@ class Game(Activity):
 
         if not self.triggered_loc:
             self.triggered_loc = True
-            self.checkAnswer()
+            #self.checkAnswer()
         else:
             print("Already triggered")
 
@@ -214,20 +214,27 @@ class Game(Activity):
             if nBackPos == pos:
                 self.results["correct"] += 1
                 self.setCorrectAnswer()
+                self.lastResult = 'correct'
                 print("Correct, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
             elif nBackPos != pos:
                 self.results["wrong"] += 1
                 self.setWrongAnswer()
+                self.lastResult = 'wrong'
                 print("Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
         else:
             if nBackPos != pos:
                 self.results["avoid"] += 1
                 self.setCorrectAnswer()
+                self.lastResult ='avoid'
                 print("Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
             elif nBackPos == pos:
                 self.results["miss"] += 1
                 self.setWrongAnswer()
                 print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                self.lastResult = 'miss'
+
+    def getLastResult(self):
+        return self.lastResult
 
     #Picks the next square that will pop up
     def nextSlide(self):
@@ -352,19 +359,23 @@ class Game1(Game):
                     self.results["correct"] += 1
                     self.setCorrectAnswer()
                     print("Correct, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                    self.lastResult = 'correct'
                 elif nBackPos != pos:
                     self.results["wrong"] += 1
                     self.setWrongAnswer()
                     print("Wrong, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                    self.lastResult = 'wrong'
             else:
                 if nBackPos != pos:
                     self.results["avoid"] += 1
                     self.setCorrectAnswer()
                     print("Avoided it, {0} is not equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                    self.lastResult = 'avoid'
                 elif nBackPos == pos:
                     self.results["miss"] += 1
                     self.setWrongAnswer()
                     print("Missed it, {0} is equal to {1} with nBack={2}.".format(nBackPos, pos, self.settings.nBack))
+                    self.lastResult = 'miss'
 
 
         if self.early_slide_sound():
@@ -412,7 +423,8 @@ class Game1(Game):
         self.history_sound.append(sound)
 
         if self.settings.debug:
-            print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
+            pass
+        #    print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
 
         sound = pygame.mixer.Sound(self.sound_bank[sound-1])
         sound.play()

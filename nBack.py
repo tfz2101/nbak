@@ -43,16 +43,22 @@ class NBack:
 
         self.currentTotalSlidesElapsed = 0
 
+        self.switchAddOn = 1 #account for the first slide
+
         self.warmup_slides = 3
 
     def stop(self):
         self.save()
+        print('Position Results')
         print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.compiledPosResults))
+        print('Sound Results')
         print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.compiledSoundResults))
-        pygame.time.set_timer(USEREVENT+1, 0)
-        pygame.time.set_timer(QUIT, self.settings.slideTime)
-
-
+        #pygame.time.set_timer(USEREVENT+1, 0)
+        #pygame.time.set_timer(QUIT, self.settings.slideTime/4)
+        #pygame.time.set_timer(QUIT, 0)
+        time.sleep(2)
+        pygame.quit()
+        sys.exit()
 
     def save(self):
         print("Saving results to CSV...")
@@ -61,7 +67,7 @@ class NBack:
             position_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.compiledPosResults)
             sound_results = "\n{correct},{wrong},{avoid},{miss}".format(**self.compiledSoundResults)
             f.writelines([position_results, sound_results])
-
+    #SLIDE AFTER SWITCH AND LAST SIDE BEFORE STOP ARE NOT REGISTERING!!
     def run(self):
         if self.settings.standalone:
             self.game.start()
@@ -71,46 +77,56 @@ class NBack:
 
         time.sleep(2)
         while True:
-            if (self.currentTotalSlidesElapsed + self.game.getSlidesElapsed()) >= self.settings.numOfSlides:
+            if (self.currentTotalSlidesElapsed + self.game.getSlidesElapsed()) >= (self.settings.numOfSlides + self.switchAddOn):
+                print('STOP GAME!')
+                self.updateCompiledResults()
                 self.stop()
 
             #Streams in user actions
             self.handler()
+
+
+            if self.game.getCurrentGamePercentage() < 0.5 and self.game.getSlidesElapsed() > self.warmup_slides:
+               print('SWITCH GRID')
+               self.switchAddOn += 1
+               #print('current game slides elapsed', self.game.getSlidesElapsed())
+               #print('game %', self.game.getCurrentGamePercentage())
+               #print('total slides passed', self.currentTotalSlidesElapsed)
+               self.currentTotalSlidesElapsed += self.game.getSlidesElapsed()
+               print('This Games Results')
+               print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.game.results))
+               self.updateCompiledResults()
+
+               nextGrid = random.randint(0,2)
+               if nextGrid == self.curGridIndex:
+                   self.curGridIndex = self.curGridIndex - 1
+               else:
+                   self.curGridIndex = nextGrid
+
+
+               self.game = self.gridArray[self.curGridIndex]
+               self.game.start_grid()
+
 
             #initiates the drawing of the game and then results
             self.draw()
 
             pygame.display.flip()
 
+    def updateCompiledResults(self):
+        for key in self.game.results:
+            self.compiledPosResults[key] += self.game.results[key]
+            try:
+                self.compiledSoundResults[key] += self.game.results_sound[key]
+            except AttributeError:
+                pass
 
     def draw(self):
 
         #Change this code to change the Grid!!
         if self.drawGame:
 
-           if self.game.getCurrentGamePercentage() < 0.5 and self.game.getSlidesElapsed() > self.warmup_slides:
-                self.currentTotalSlidesElapsed += self.game.getSlidesElapsed()
-                for key in self.game.results:
-                    self.compiledPosResults[key]+=self.game.results[key]
-                    try:
-                        self.compiledSoundResults[key] += self.game.results_sound[key]
-                    except AttributeError:
-                        pass
-
-                nextGrid = random.randint(0,2)
-                if nextGrid == self.curGridIndex:
-                    self.curGridIndex = self.curGridIndex - 1
-                else:
-                    self.curGridIndex = nextGrid
-
-
-                self.game = self.gridArray[self.curGridIndex]
-                self.game.start_grid()
            self.screen.blit(self.game.draw_grid1(), (self.board_position[2][0], self.board_position[2][1]))
-        print('current game slides elapsed',self.game.getSlidesElapsed())
-        print('game %',self.game.getCurrentGamePercentage())
-        print('total slides passed',self.currentTotalSlidesElapsed)
-
 
         if self.drawResults:
             self.screen.blit(self.results.draw(), (0, 0))
@@ -152,7 +168,7 @@ class NBack:
 
             elif event.type == USEREVENT+1:
                 self.game.showSlideSwitch()
-
+                #print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.compiledPosResults))
 
 
 settings = Settings.Instance()
