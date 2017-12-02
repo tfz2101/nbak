@@ -40,12 +40,10 @@ class NBack:
         self.game = self.grid1
 
         self.board_position = {1:[80,80],2:[40,30],3:[120,120]}
-
         self.currentTotalSlidesElapsed = 0
-
-        self.switchAddOn = 1 #account for the first slide
-
+        self.switchAddOn = 0
         self.warmup_slides = 3
+        self.thresholdSwitchGame = 0.5
 
     def stop(self):
         self.save()
@@ -77,16 +75,17 @@ class NBack:
 
         time.sleep(2)
         while True:
+
             if (self.currentTotalSlidesElapsed + self.game.getSlidesElapsed()) >= (self.settings.numOfSlides + self.switchAddOn):
+                self.game.checkAnswer()
                 print('STOP GAME!')
+                print('This Games Results')
+                print( "Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.game.results))
                 self.updateCompiledResults()
                 self.stop()
 
-            #Streams in user actions
-            self.handler()
-
-
-            if self.game.getCurrentGamePercentage() < 0.5 and self.game.getSlidesElapsed() > self.warmup_slides:
+            if self.game.getCurrentGamePercentage() < self.thresholdSwitchGame and self.game.getSlidesElapsed() > self.warmup_slides:
+               self.game.checkAnswer()
                print('SWITCH GRID')
                self.switchAddOn += 1
                #print('current game slides elapsed', self.game.getSlidesElapsed())
@@ -106,10 +105,14 @@ class NBack:
 
                self.game = self.gridArray[self.curGridIndex]
                self.game.start_grid()
+               time.sleep(1)
 
 
             #initiates the drawing of the game and then results
             self.draw()
+
+            # Streams in user actions
+            self.handler()
 
             pygame.display.flip()
 

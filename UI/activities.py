@@ -443,7 +443,7 @@ class Game1(Game):
             self.nextSlide()
         else:
             self.checkAnswer()
-            pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/5))
+            pygame.time.set_timer(USEREVENT+1, int(self.settings.slideTime/4))
             #if len(self.history) >= self.settings.numOfSlides:
                 # If enough slides have passed
             #    self.stop()
