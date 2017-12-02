@@ -238,7 +238,13 @@ class Game(Activity):
 
     #Picks the next square that will pop up
     def nextSlide(self):
-        position = random.randint(1, 9)
+
+        if random.random() < self.settings.repeatProbability and not self.early_slide():
+            position = self.history[-(1+self.settings.nBack)]
+        else:
+            position = random.randint(1, 9)
+
+
 
         #Records the position of the next square
         self.history.append(position)
@@ -402,7 +408,10 @@ class Game1(Game):
 
 
     def nextSlide(self):
-        position = random.randint(1, 9)
+        if random.random() < self.settings.repeatProbability and not self.early_slide():
+            position = self.history[-(1 + self.settings.nBack)]
+        else:
+            position = random.randint(1, 9)
 
         #Records the position of the next square
         self.history.append(position)

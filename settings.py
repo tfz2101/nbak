@@ -8,7 +8,7 @@ class Settings():
     nBack = 1
 
     # Probability that one of the last N slides will be next
-    repeatProbability = nBack/9.0
+    repeatProbability = 0.3
 
     # Time given to answer each slide, the correct answer is shown afterwards at a fraction of the time
     slideTime = 2000
