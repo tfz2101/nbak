@@ -240,8 +240,7 @@ class Game(Activity):
     def nextSlide(self):
 
         if random.random() < self.settings.repeatProbability and not self.early_slide():
-            position = self.history[-(1+self.settings.nBack)]
-            print('repeat triggered')
+            position = self.history[-(self.settings.nBack)]
         else:
             position = random.randint(1, 9)
 
@@ -410,8 +409,7 @@ class Game1(Game):
 
     def nextSlide(self):
         if random.random() < self.settings.repeatProbability and not self.early_slide():
-            position = self.history[-(1 + self.settings.nBack)]
-            print('repeat triggered')
+            position = self.history[-(self.settings.nBack)]
         else:
             position = random.randint(1, 9)
 
