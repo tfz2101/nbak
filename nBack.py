@@ -58,6 +58,11 @@ class NBack:
         pygame.quit()
         sys.exit()
 
+    def getPositionWinPercentage(self):
+        totalSlides = (self.currentTotalSlidesElapsed + self.game.getSlidesElapsed())
+        correct = self.compiledPosResults['correct']+self.compiledPosResults['avoid']
+        return (correct/1.0/totalSlides)
+
     def save(self):
         print("Saving results to CSV...")
         with open("./output.csv", "w+") as f:
@@ -82,21 +87,22 @@ class NBack:
                 print('This Games Results')
                 print( "Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.game.results))
                 self.updateCompiledResults()
+                if self.getPositionWinPercentage() > 0.8:
+                    file = open('testfile.txt', 'w')
+                    file.write(self.settings.nBack + 1)
+                    file.close()
                 self.stop()
 
             if self.game.getCurrentGamePercentage() < self.thresholdSwitchGame and self.game.getSlidesElapsed() > self.warmup_slides:
                self.game.checkAnswer()
                print('SWITCH GRID')
                self.switchAddOn += 1
-               #print('current game slides elapsed', self.game.getSlidesElapsed())
-               #print('game %', self.game.getCurrentGamePercentage())
-               #print('total slides passed', self.currentTotalSlidesElapsed)
                self.currentTotalSlidesElapsed += self.game.getSlidesElapsed()
                print('This Games Results')
                print("Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.game.results))
                self.updateCompiledResults()
 
-               nextGrid = random.randint(0,2)
+               nextGrid = random.randint(0,1)
                if nextGrid == self.curGridIndex:
                    self.curGridIndex = self.curGridIndex - 1
                else:
@@ -155,7 +161,10 @@ class NBack:
                     self.game.trigger_loc()
 
                 elif event.key == K_a:
-                    self.game.trigger_sound()
+                    try:
+                        self.game.trigger_sound()
+                    except:
+                        pass
 
                 #If menu starts at startup
                 elif not self.settings.standalone:

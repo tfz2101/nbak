@@ -33,11 +33,11 @@ class Menu(Activity):
 
     def draw(self):
         surface = pygame.Surface((800, 600), pygame.SRCALPHA)
-        surface.fill((255, 255, 255))
+        surface.fill((0, 0, 0))
         image = pygame.image.load('menu_design.png')
-        image = pygame.transform.scale(image, (910, 800))
+        image = pygame.transform.scale(image, (700, 500))
 
-        surface.blit(image, (50, 50))
+        surface.blit(image, (110, 100))
         self.surface = surface
 
         return self.surface
@@ -433,7 +433,7 @@ class Game1(Game):
 
         if self.settings.debug:
             pass
-        #    print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
+            print("Slide number {0} generated with SOUND: {1}".format(len(self.history_sound), self.history_sound[-1]))
 
         sound = pygame.mixer.Sound(self.sound_bank[sound-1])
         sound.play()
