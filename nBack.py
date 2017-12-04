@@ -87,9 +87,9 @@ class NBack:
                 print('This Games Results')
                 print( "Correct: {correct}\nWrong: {wrong}\nAvoided: {avoid}\nMissed: {miss}".format(**self.game.results))
                 self.updateCompiledResults()
-                if self.getPositionWinPercentage() > 0.8:
-                    file = open('testfile.txt', 'w')
-                    file.write(self.settings.nBack + 1)
+                if self.getPositionWinPercentage() > 0.3:
+                    file = open('n.txt', 'w')
+                    file.write(str(self.settings.nBack + 1))
                     file.close()
                 self.stop()
 
